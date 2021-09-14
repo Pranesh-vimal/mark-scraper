@@ -34,8 +34,24 @@ class FileController extends Controller
         libxml_use_internal_errors(true);
         $dom->loadHTML($html);
         libxml_use_internal_errors(false);
+        $dom->preserveWhiteSpace = false;
+        $tables = $dom->getElementsByTagName('table');
+        $table = $tables->item(1);
+        $rows = $table->getElementsByTagName('tr');
+        $data = [];
+        foreach ($rows as $key => $row) {
+            $info = $row->getElementsByTagName('td');
+            $grade = $row->getElementsByTagName('th');
+            if(isset($grade->item(1)->nodeValue) && isset($grade->item(0)->nodeValue) && $key!=0)
+                $data[$key]['grade']= $grade->item(1)->nodeValue;
+            if(isset($info->item(0)->nodeValue) && isset($info->item(1)->nodeValue) && isset($info->item(2)->nodeValue)){
+                $data[$key]['sem']= $info->item(0)->nodeValue;
+                $data[$key]['subject_code']= $info->item(1)->nodeValue;
+                $data[$key]['subject_name']= $info->item(2)->nodeValue;            
+            }
+        }
+        dd($data);
         
-        dd($dom);
     }
     
     
