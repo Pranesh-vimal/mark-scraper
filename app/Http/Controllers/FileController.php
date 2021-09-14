@@ -25,16 +25,21 @@ class FileController extends Controller
 
         $array = Excel::toArray(new ImportFile, $request->file);
 
-        $crawler = $client->request('POST', "https://results.kongu.edu/xxiofrego.php", [
-            'body' => ['regno' => '17ISR006', 'dob' => '17.05.2000'],
-            'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-            ],
+        $response = Http::asForm()->post('https://results.kongu.edu/xxiofrego.php', [
+            'regno' => '17isr031', 'dob' => '19.03.2000',
         ]);
-
-        dd($crawler);
+        $dom = new \DOMDocument(); 
+        $html= $response->body();
+        $html=preg_replace('/<!--(.|\s)*?--!>/', '', $html);
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($html);
+        libxml_use_internal_errors(false);
+        
+        dd($dom);
     }
-
+    
+    
+    
     /**
      * Show the form for creating a new resource.
      *
