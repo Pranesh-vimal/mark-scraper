@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExportFile;
 use App\Exports\ImportFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -24,7 +25,7 @@ class FileController extends Controller
         $array = Excel::toArray(new ImportFile, $request->file);
 
         $results = [];
-
+        $heading = ['name', 'regno', 'gpa', 'cgpa'];
         foreach ($array[3] as $key => $value) {
 
             if ($key == 0) {
@@ -42,50 +43,60 @@ class FileController extends Controller
             $dom->loadHTML($html);
             libxml_use_internal_errors(false);
             $dom->preserveWhiteSpace = false;
-            $data = [];
-            $data['regno'] = $value[0];
-            $data['name'] = $value[1];
-            $data['dob'] = $value[2];
+            $marks = [];
+            $marks['name'] = $value[1];
+            $marks['regno'] = $value[0];
+
             if ($dom->getElementsByTagName('table')->length > 0) {
+
                 $tables = $dom->getElementsByTagName('table');
                 $table = $tables->item(1);
                 $rows = $table->getElementsByTagName('tr');
 
-                foreach ($rows as $key => $row) {
+                $data = [];
+
+                $data['regno'] = $value[0];
+                $data['name'] = $value[1];
+                $data['dob'] = $value[2];
+
+                foreach ($rows as $index => $row) {
+
                     $info = $row->getElementsByTagName('td');
                     $grade = $row->getElementsByTagName('th');
                     if (isset($info->item(0)->nodeValue) && isset($info->item(1)->nodeValue) && isset($info->item(2)->nodeValue)) {
-                        $data[$key]['sem'] = $info->item(0)->nodeValue;
-                        $data[$key]['subject_code'] = $info->item(1)->nodeValue;
-                        $data[$key]['subject_name'] = $info->item(2)->nodeValue;
+                        $data['marks'][$index]['sem'] = $info->item(0)->nodeValue;
+                        $data['marks'][$index]['subject_code'] = $info->item(1)->nodeValue;
+                        $data['marks'][$index]['subject_name'] = $info->item(2)->nodeValue;
+                        if (!in_array($info->item(2)->nodeValue, $heading)) {
+                            array_push($heading, $info->item(2)->nodeValue);
+                        }
                     }
-                    if (isset($grade->item(1)->nodeValue) && isset($grade->item(0)->nodeValue) && $key != 0) {
-                        $data[$key]['credits'] = $grade->item(0)->nodeValue;
-                        $data[$key]['grade'] = $grade->item(1)->nodeValue;
+
+                    if (isset($grade->item(1)->nodeValue) && isset($grade->item(0)->nodeValue) && $index != 0) {
+                        $data['marks'][$index]['credits'] = $grade->item(0)->nodeValue;
+                        $data['marks'][$index]['grade'] = $grade->item(1)->nodeValue;
                     }
                 }
+
+                $cgpatable = $tables->item(2);
+                $cgparow = $cgpatable->getElementsByTagName('tr');
+
+                $col = $cgparow[0]->getElementsByTagName('th');
+                $gpa = explode(':', $col->item(0)->nodeValue);
+                $data['gpa'] = isset($gpa[1]) ? $gpa[1] : '-';
+                $col = $cgparow[1]->getElementsByTagName('th');
+                $cgpa = explode(':', $col->item(0)->nodeValue);
+                $data['cgpa'] = isset($cgpa[1]) ? $cgpa[1] : '-';
+                $marks['gpa'] = $data['gpa'];
+                $marks['cgpa'] = $data['cgpa'];
+                foreach ($data['marks'] as $key => $value) {
+                    $marks[$value['subject_name']] = $value['grade'];
+                }
             }
-            $results[] = ($data);
+            $results[] = ($marks);
         }
-        dd($results);
-        // foreach ($results as $key => $value) {
-        //     foreach ($value as $k => $v) {
-        //         if(gettype($v) == 'string'){
 
-        //         }
-        //     }
-        //     dd($value);
-        // }
-
-        // header("Content-Disposition: attachment; filename=\"demo.xls\"");
-        // header("Content-Type: application/vnd.ms-excel;");
-        // header("Pragma: no-cache");
-        // header("Expires: 0");
-        // $out = fopen("php://output", 'w');
-        // foreach ($results as $data) {
-        //     fputcsv($out, $data, "\t");
-        // }
-        // fclose($out);
+        return Excel::download(new ExportFile($results, $heading), 'mark (2017).xlsx');
     }
 
 
