@@ -42,15 +42,14 @@ class FileController extends Controller
             $dom->loadHTML($html);
             libxml_use_internal_errors(false);
             $dom->preserveWhiteSpace = false;
+            $data = [];
+            $data['regno'] = $value[0];
+            $data['name'] = $value[1];
+            $data['dob'] = $value[2];
             if ($dom->getElementsByTagName('table')->length > 0) {
                 $tables = $dom->getElementsByTagName('table');
                 $table = $tables->item(1);
                 $rows = $table->getElementsByTagName('tr');
-                $data = [];
-
-                $data['regno'] = $value[0];
-                $data['name'] = $value[1];
-                $data['dob'] = $value[2];
 
                 foreach ($rows as $key => $row) {
                     $info = $row->getElementsByTagName('td');
