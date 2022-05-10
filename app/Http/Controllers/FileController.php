@@ -32,7 +32,11 @@ class FileController extends Controller
                 continue;
             }
 
-            $response = Http::asForm()->post('https://results.kongu.edu/xxiofrego.php', [
+            if ($value[0] === null) {
+                break;
+            }
+
+            $response = Http::asForm()->post('https://results.kongu.edu/xxiofy/xxiofyo.php', [
                 'regno' => $value[0], 'dob' => $value[2],
             ]);
 
