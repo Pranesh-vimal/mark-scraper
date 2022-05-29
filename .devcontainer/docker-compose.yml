@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+    php:
+        build: .
+        volumes:
+            - ..:/workspace:cached
+        ports:
+            # For use with PHP (e.g. `php -S localhost:8080`)
+            - "8000:8000"
+        command: sleep infinity
